@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.neu.ydy.goodclimate">
+
     <!--//地图包、搜索包需要的基础权限-->
     <!--允许程序打开网络套接字-->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -48,7 +49,9 @@
         <meta-data
             android:name="com.amap.api.v2.apikey"
             android:value="9ab867da9cdc24136f29c8b39a03fe37"/>
-
+        <!-- 定位需要的服务 -->
+        <service android:name="com.amap.api.location.APSService">
+        </service>
 
 
         <activity android:name=".MainActivity">
