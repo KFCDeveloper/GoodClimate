@@ -217,8 +217,6 @@ public class MainActivity extends AppCompatActivity implements WeatherSearch.OnW
     }
 
 
-
-
     /**
      * 预报天气查询
      */
