@@ -3,6 +3,8 @@ package com.neu.ydy.goodclimate;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.amap.api.location.AMapLocation;
@@ -10,16 +12,40 @@ import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.amap.api.location.AMapLocationQualityReport;
+import com.amap.api.services.core.AMapException;
+import com.amap.api.services.weather.LocalDayWeatherForecast;
+import com.amap.api.services.weather.LocalWeatherForecast;
+import com.amap.api.services.weather.LocalWeatherForecastResult;
+import com.amap.api.services.weather.LocalWeatherLive;
+import com.amap.api.services.weather.LocalWeatherLiveResult;
+import com.amap.api.services.weather.WeatherSearch;
+import com.amap.api.services.weather.WeatherSearchQuery;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements WeatherSearch.OnWeatherSearchListener {
     private TextView tvResult;
+    private Button btLocation;
+    private TextView forecasttv;
+    private TextView reporttime1;
+    private TextView reporttime2;
+    private TextView weather;
+    private TextView Temperature;
+    private TextView wind;
+    private TextView humidity;
+
     //声明AMapLocationClient类对象
-    public AMapLocationClient locationClient = null;
+    private AMapLocationClient locationClient = null;
     //声明AMapLocationClientOption对象
-    public AMapLocationClientOption locationOption = null;
+    private AMapLocationClientOption locationOption;
+    private WeatherSearchQuery mquery;
+    private WeatherSearch mweathersearch;
+    private LocalWeatherLive weatherlive;
+    private LocalWeatherForecast weatherforecast;
+    private List<LocalDayWeatherForecast> forecastlist = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +59,16 @@ public class MainActivity extends AppCompatActivity {
     //初始化控件
     private void initView() {
         tvResult = (TextView) findViewById(R.id.tv_result);
+        btLocation = (Button) findViewById(R.id.btLocation);
+        btLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 设置定位参数
+                locationClient.setLocationOption(locationOption);
+                // 启动定位
+                locationClient.startLocation();
+            }
+        });
     }
 
     /**
@@ -106,8 +142,14 @@ public class MainActivity extends AppCompatActivity {
                     sb.append("区域 码   : " + location.getAdCode() + "\n");
                     sb.append("地    址    : " + location.getAddress() + "\n");
                     sb.append("兴趣点    : " + location.getPoiName() + "\n");
-                    //定位完成的时间
+                    //定位完成的时间                                                                                                                                                                            
                     sb.append("定位时间: " + Utils.formatUTC(location.getTime(), "yyyy-MM-dd HH:mm:ss") + "\n");
+
+                    /// Step 4 获得天气
+                    //检索参数为城市和天气类型，实况天气为WEATHER_TYPE_LIVE、天气预报为WEATHER_TYPE_FORECAST
+
+
+
                 } else {
                     //定位失败
                     sb.append("定位失败" + "\n");
@@ -136,12 +178,13 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 获取GPS状态的字符串
+     *
      * @param statusCode GPS状态码
      * @return
      */
-    private String getGPSStatusString(int statusCode){
+    private String getGPSStatusString(int statusCode) {
         String str = "";
-        switch (statusCode){
+        switch (statusCode) {
             case AMapLocationQualityReport.GPS_STATUS_OK:
                 str = "GPS状态正常";
                 break;
@@ -159,5 +202,113 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return str;
+    }
+
+
+
+
+    /**
+     * 预报天气查询
+     */
+    private void searchforcastsweather(String cityname) {
+        mquery = new WeatherSearchQuery(cityname, WeatherSearchQuery.WEATHER_TYPE_FORECAST);//检索参数为城市和天气类型，实时天气为1、天气预报为2
+        mweathersearch = new WeatherSearch(this);
+        mweathersearch.setOnWeatherSearchListener(this);
+        mweathersearch.setQuery(mquery);
+        mweathersearch.searchWeatherAsyn(); //异步搜索
+    }
+
+    /**
+     * 实时天气查询
+     */
+    private void searchliveweather(String cityname) {
+        mquery = new WeatherSearchQuery(cityname, WeatherSearchQuery.WEATHER_TYPE_LIVE);//检索参数为城市和天气类型，实时天气为1、天气预报为2
+        mweathersearch = new WeatherSearch(this);
+        mweathersearch.setOnWeatherSearchListener(this);
+        mweathersearch.setQuery(mquery);
+        mweathersearch.searchWeatherAsyn(); //异步搜索
+    }
+
+    /**
+     * 实时天气查询回调
+     */
+    @Override
+    public void onWeatherLiveSearched(LocalWeatherLiveResult weatherLiveResult, int rCode) {
+        if (rCode == AMapException.CODE_AMAP_SUCCESS) {
+            if (weatherLiveResult != null && weatherLiveResult.getLiveResult() != null) {
+                weatherlive = weatherLiveResult.getLiveResult();
+                reporttime1.setText(weatherlive.getReportTime() + "发布");
+                weather.setText(weatherlive.getWeather());
+                Temperature.setText(weatherlive.getTemperature() + "°");
+                wind.setText(weatherlive.getWindDirection() + "风     " + weatherlive.getWindPower() + "级");
+                humidity.setText("湿度         " + weatherlive.getHumidity() + "%");
+            } else {
+                ToastUtil.show(MainActivity.this, "对不起，没有搜索到相关数据！");
+            }
+        } else {
+            ToastUtil.showerror(MainActivity.this, rCode);
+        }
+    }
+
+    /**
+     * 天气预报查询结果回调
+     */
+    @Override
+    public void onWeatherForecastSearched(
+            LocalWeatherForecastResult weatherForecastResult, int rCode) {
+        if (rCode == AMapException.CODE_AMAP_SUCCESS) {
+            if (weatherForecastResult != null && weatherForecastResult.getForecastResult() != null
+                    && weatherForecastResult.getForecastResult().getWeatherForecast() != null
+                    && weatherForecastResult.getForecastResult().getWeatherForecast().size() > 0) {
+                weatherforecast = weatherForecastResult.getForecastResult();
+                forecastlist = weatherforecast.getWeatherForecast();
+                fillforecast();
+
+            } else {
+                ToastUtil.show(MainActivity.this, "对不起，没有搜索到相关数据！");
+            }
+        } else {
+            ToastUtil.showerror(MainActivity.this, rCode);
+        }
+    }
+
+    private void fillforecast() {
+        reporttime2.setText(weatherforecast.getReportTime() + "发布");
+        String forecast = "";
+        for (int i = 0; i < forecastlist.size(); i++) {
+            LocalDayWeatherForecast localdayweatherforecast = forecastlist.get(i);
+            String week = null;
+            switch (Integer.valueOf(localdayweatherforecast.getWeek())) {
+                case 1:
+                    week = "周一";
+                    break;
+                case 2:
+                    week = "周二";
+                    break;
+                case 3:
+                    week = "周三";
+                    break;
+                case 4:
+                    week = "周四";
+                    break;
+                case 5:
+                    week = "周五";
+                    break;
+                case 6:
+                    week = "周六";
+                    break;
+                case 7:
+                    week = "周日";
+                    break;
+                default:
+                    break;
+            }
+            String temp = String.format("%-3s/%3s",
+                    localdayweatherforecast.getDayTemp() + "°",
+                    localdayweatherforecast.getNightTemp() + "°");
+            String date = localdayweatherforecast.getDate();
+            forecast += date + "  " + week + "                       " + temp + "\n\n";
+        }
+        forecasttv.setText(forecast);
     }
 }
