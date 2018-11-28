@@ -26,7 +26,9 @@ import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements WeatherSearch.OnWeatherSearchListener {
-    private TextView tvResult;
+    //TODO: 处理 tvResult
+    //private TextView tvResult;
+    private TextView city;
     private Button btLocation;
     private TextView forecasttv;
     private TextView reporttime1;
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements WeatherSearch.OnW
 
     //初始化控件
     private void initView() {
-        tvResult = (TextView) findViewById(R.id.tv_result);
+        //tvResult = (TextView) findViewById(R.id.tv_result);
         btLocation = (Button) findViewById(R.id.btLocation);
         btLocation.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,6 +71,14 @@ public class MainActivity extends AppCompatActivity implements WeatherSearch.OnW
                 locationClient.startLocation();
             }
         });
+        city = (TextView) findViewById(R.id.city);
+        forecasttv = (TextView) findViewById(R.id.forecast);
+        reporttime1 = (TextView) findViewById(R.id.reporttime1);
+        reporttime2 = (TextView) findViewById(R.id.reporttime2);
+        weather = (TextView) findViewById(R.id.weather);
+        Temperature = (TextView) findViewById(R.id.temp);
+        wind = (TextView) findViewById(R.id.wind);
+        humidity = (TextView) findViewById(R.id.humidity);
     }
 
     /**
@@ -147,7 +157,9 @@ public class MainActivity extends AppCompatActivity implements WeatherSearch.OnW
 
                     /// Step 4 获得天气
                     //检索参数为城市和天气类型，实况天气为WEATHER_TYPE_LIVE、天气预报为WEATHER_TYPE_FORECAST
-
+                    city.setText(location.getCity());
+                    searchforcastsweather(location.getCity());
+                    searchliveweather(location.getCity());
 
 
                 } else {
@@ -169,9 +181,9 @@ public class MainActivity extends AppCompatActivity implements WeatherSearch.OnW
 
                 //解析定位结果，
                 String result = sb.toString();
-                tvResult.setText(result);
+                //tvResult.setText(result);
             } else {
-                tvResult.setText("定位失败，loc is null");
+                //tvResult.setText("定位失败，loc is null");
             }
         }
     };
